@@ -1,5 +1,6 @@
 package github.alecsio.mmceaddons.common.hatch.vanilla.gui;
 
+import github.alecsio.mmceaddons.util.SingularitySlotItemHandler;
 import hellfirepvp.modularmachinery.client.gui.GuiContainerBase;
 import hellfirepvp.modularmachinery.common.block.prop.ItemBusSize;
 import hellfirepvp.modularmachinery.common.tiles.base.TileItemBus;
@@ -7,15 +8,22 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderItem;
+import net.minecraft.client.resources.I18n;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.Slot;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.TextFormatting;
 
 import javax.annotation.Nullable;
+import java.text.NumberFormat;
+import java.util.List;
+import java.util.Locale;
 
 public class GuiContainerSingularityItemBus extends GuiContainerBase<ContainerSingularityItemBus> {
     private static CompactCountRenderItem compactCountRenderItem;
+    private static final NumberFormat EXACT_COUNT_FORMAT = NumberFormat.getIntegerInstance(Locale.US);
     public GuiContainerSingularityItemBus(TileItemBus itemBus, EntityPlayer opening) {
         super(new ContainerSingularityItemBus(itemBus, opening));
     }
@@ -150,5 +158,16 @@ public class GuiContainerSingularityItemBus extends GuiContainerBase<ContainerSi
                 fontRenderer.setUnicodeFlag(unicodeFlag);
             }
         }
+    }
+    @Override
+    public List<String> getItemToolTip(ItemStack stack) {
+        List<String> tooltip = super.getItemToolTip(stack);
+        Slot hoveredSlot = this.getSlotUnderMouse();
+        if (stack.getCount() >= 1_000
+                && hoveredSlot instanceof SingularitySlotItemHandler
+                && hoveredSlot.getStack() == stack) {
+            tooltip.add(TextFormatting.GRAY + I18n.format("tooltip.modularmachineryaddons.singularity.stored", EXACT_COUNT_FORMAT.format(stack.getCount())));
+        }
+        return tooltip;
     }
 }

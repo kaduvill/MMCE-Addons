@@ -116,4 +116,41 @@ public class ContainerSingularityItemBus extends ContainerItemBus {
         }
         return super.slotClick(slotId, dragType, clickTypeIn, player);
     }
+
+    @Override
+    protected boolean mergeItemStack(ItemStack stack, int startIndex, int endIndex, boolean reverseDirection) {
+        if (startIndex != PLAYER_SLOT_COUNT || endIndex != this.inventorySlots.size()) {
+            return super.mergeItemStack(stack, startIndex, endIndex, reverseDirection);
+        }
+        boolean changed = mergeIntoSingularitySlots(stack, startIndex, endIndex, reverseDirection, false);
+        if (!stack.isEmpty()) {
+            changed |= mergeIntoSingularitySlots(stack, startIndex, endIndex, reverseDirection, true);
+        }
+        return changed;
+    }
+
+    private boolean mergeIntoSingularitySlots(ItemStack stack, int startIndex, int endIndex, boolean reverseDirection, boolean emptySlots) {
+        boolean changed = false;
+        int index = reverseDirection ? endIndex - 1 : startIndex;
+        while (!stack.isEmpty() && index >= startIndex && index < endIndex) {
+            Slot slot = this.inventorySlots.get(index);
+            ItemStack existing = slot.getStack();
+            if (slot instanceof SingularitySlotItemHandler singularitySlot
+                    && existing.isEmpty() == emptySlots
+                    && singularitySlot.getSlotStackLimit() > 0
+                    && (emptySlots || existing.getCount() < singularitySlot.getSlotStackLimit()
+                    && existing.isItemEqual(stack)
+                    && ItemStack.areItemStackTagsEqual(existing, stack))) {
+                int previousCount = stack.getCount();
+                ItemStack remainder = singularitySlot.insertItem(stack);
+                int remainingCount = remainder.isEmpty() ? 0 : remainder.getCount();
+                if (remainingCount < previousCount) {
+                    stack.setCount(remainingCount);
+                    changed = true;
+                }
+            }
+            index += reverseDirection ? -1 : 1;
+        }
+        return changed;
+    }
 }
